@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { useEffect } from "react";
 import "./App.scss";
+import MovieCard from "./components/MovieCard";
 import SearchBar from "./components/SearchBar";
 const apiKey = import.meta.env.VITE_API_KEY;
 function App() {
   const [movies, setMovies] = useState([]);
+  const [error, setError] = useState();
+
   console.log(movies);
   useEffect(() => {
     fetch(
@@ -12,27 +15,38 @@ function App() {
     )
       .then((response) => response.json())
       .then((obj) => setMovies(obj.results))
-      .catch((error) => console.log(error));
+      .catch((error) => {
+        console.log(error);
+        setError('Ops, sembra ci sia stato un problema nel caricamento...Perfavore ricarica la pagina!')
+      });
   }, []);
-  const gestisciRicerca = (termineRicerca) => {
-    console.log(`Ricerca per: ${termineRicerca}`);
-  };
+ 
+  const search = async (seacrhvalue) =>{
+    const searchParams = new URLSearchParams({
+      api_key:apiKey,
+      query: seacrhvalue,
+      language: 'it-IT'
+    })
+    const response = await fetch(`https://api.themoviedb.org/3/search/movie?${searchParams.toString()}`)
+    const {results} = await response.json();
+    setMovies(results)
+  }
+
   return (
     <>
+    {error && <div className="error-msg">
+    {error}
+  </div>}
       <h1>Film Del Momento</h1>
-      <SearchBar onSearch={gestisciRicerca} />
+      <SearchBar 
+      onSearch={search}
+      />
       <div className="movies">
         {movies.map((m) => (
-          <div key={m.id} className="movie-card">
-            <figure>
-              <img
-                src={`https://image.tmdb.org/t/p/w500${m.poster_path}`}
-                alt=""
-              />
-            </figure>
-            <div className="title">{m.title}</div>
-            <p>{m.overview}</p>
-          </div>
+          <MovieCard
+          key={m.id}
+          data={m}
+          />
         ))}
       </div>
     </>
